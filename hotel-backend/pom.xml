@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ================================================================= -->
+<!-- pom.xml: el archivo que le dice a Maven que librerias bajar       -->
+<!-- (Maven es como el "gestor de dependencias" de Java, parecido a    -->
+<!-- npm en React: en vez de package.json, aca usamos pom.xml)         -->
+<!-- ================================================================= -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Heredamos de Spring Boot: el "padre" trae versiones ya probadas -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/>
+    </parent>
+
+    <!-- Identidad de nuestro proyecto -->
+    <groupId>com.hotelcandelaria</groupId>
+    <artifactId>hotel-candelaria-spring</artifactId>
+    <version>1.0.0</version>
+    <name>Hotel Candelaria - Backend Spring Boot</name>
+    <description>Migracion del sistema de reservas de Swing a API REST</description>
+
+    <properties>
+        <!-- Spring Boot 3 necesita Java 17 o superior -->
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+        <!-- spring-boot-starter-web: trae TODO lo necesario para hacer una -->
+        <!-- API REST (el servidor Tomcat embebido, los @RestController, -->
+        <!-- la conversion automatica de objetos Java a JSON, etc.)         -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Plugin que permite correr la app con: mvn spring-boot:run -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
