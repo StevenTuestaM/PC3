@@ -1,32 +1,38 @@
-package com.hotelcandelaria.modelo; // Nuevo paquete (antes era hotelcandelaria)
+package com.hotelcandelaria.modelo;
 
-import java.io.Serializable; // Lo mantenemos para poder guardar en el archivo .dat
+import jakarta.persistence.*;
 
-// Clase ABSTRACTA: igualita a tu version original. La herencia y el
-// polimorfismo se quedan intactos, eso es lo bonito de migrar a Spring:
-// tu logica POO no se toca.
-public abstract class Persona implements Serializable {
-    private static final long serialVersionUID = 1L; // Version del archivo binario
+// Clase ABSTRACTA. Con @MappedSuperclass, sus atributos (id, dni, nombres,
+// apellidos) se HEREDAN como columnas en las tablas de los hijos (Huesped y
+// Empleado), pero Persona en si NO crea su propia tabla.
+// Asi mantenemos tu herencia y polimorfismo, y ademas mapea a la BD.
+@MappedSuperclass
+public abstract class Persona {
 
-    protected String dni;       // protected: los hijos lo usan directo
-    protected String nombres;   // Nombres de la persona
-    protected String apellidos; // Apellidos de la persona
+    @Id // llave primaria
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // autoincremental
+    protected Long id;
 
-    // Constructor vacio: Jackson (la libreria que arma el JSON) lo necesita
-    // para reconstruir objetos cuando React manda datos. No borrar.
+    protected String dni;
+    protected String nombres;
+    protected String apellidos;
+
     public Persona() {}
 
-    public Persona(String dni, String nombres, String apellidos) { // Constructor padre
+    public Persona(String dni, String nombres, String apellidos) {
         this.dni = dni;
         this.nombres = nombres;
         this.apellidos = apellidos;
     }
 
-    // Getters: ahora son OBLIGATORIOS porque Jackson los usa para convertir
-    // el objeto a JSON y mandarselo a React. Sin getter, ese campo no viaja.
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getDni() { return dni; }
+    public void setDni(String dni) { this.dni = dni; }
     public String getNombres() { return nombres; }
+    public void setNombres(String nombres) { this.nombres = nombres; }
     public String getApellidos() { return apellidos; }
+    public void setApellidos(String apellidos) { this.apellidos = apellidos; }
 
-    public abstract String obtenerInfo(); // Polimorfismo: cada hijo lo programa
+    public abstract String obtenerInfo(); // polimorfismo
 }

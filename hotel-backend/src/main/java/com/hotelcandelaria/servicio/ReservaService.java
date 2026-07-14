@@ -1,101 +1,76 @@
 package com.hotelcandelaria.servicio;
 
+import com.hotelcandelaria.modelo.Huesped;
 import com.hotelcandelaria.modelo.Reserva;
-import jakarta.annotation.PostConstruct;
+import com.hotelcandelaria.repositorio.HuespedRepository;
+import com.hotelcandelaria.repositorio.ReservaRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.util.ArrayList;   // ESTRUCTURA 1: lista principal de reservas
-import java.util.LinkedList;  // ESTRUCTURA 2: historial (insercion al inicio)
+import java.util.ArrayList;   // ESTRUCTURA 1: ArrayList
+import java.util.LinkedList;  // ESTRUCTURA 2: LinkedList
 import java.util.List;
 import java.util.Optional;
 
-// Este es tu antiguo "Contenedor", ahora como servicio de Spring.
+// Servicio de reservas. Ahora persiste en SQL Server via repositorios, pero
+// SEGUIMOS usando ArrayList, LinkedList y lambdas para procesar en memoria.
 @Service
 public class ReservaService {
 
-    // -------- ESTRUCTURA 1: ArrayList (almacen principal) --------
-    private List<Reserva> listaReservas = new ArrayList<>();
+    private final ReservaRepository reservaRepo;
+    private final HuespedRepository huespedRepo;
 
-    // -------- ESTRUCTURA 2: LinkedList (log de actividad) --------
-    // Insertamos al inicio con addFirst(): instantaneo en LinkedList,
-    // lento en ArrayList. Ese es el argumento para defenderlo oralmente.
-    private LinkedList<String> historialActividad = new LinkedList<>();
+    public ReservaService(ReservaRepository reservaRepo, HuespedRepository huespedRepo) {
+        this.reservaRepo = reservaRepo;
+        this.huespedRepo = huespedRepo;
+    }
 
-    private static final String ARCHIVO = "reservas.dat";
-
-    @PostConstruct
-    public void iniciar() { cargarDatos(); }
+    // ESTRUCTURA 2: LinkedList -> log de actividad en memoria. Insertamos al
+    // INICIO con addFirst() (instantaneo en LinkedList, lento en ArrayList).
+    private final LinkedList<String> historialActividad = new LinkedList<>();
 
     // CREATE
     public void insertar(Reserva r) {
-        listaReservas.add(r);
-        historialActividad.addFirst("NUEVA reserva -> " + r.getHuesped().getDni());
-        serializar();
+        // Reutilizamos el huesped si ya existe (por DNI); si no, lo guardamos.
+        Huesped h = r.getHuesped();
+        Huesped gestionado = huespedRepo.findByDni(h.getDni())
+                .orElseGet(() -> huespedRepo.save(h)); // LAMBDA (proveedor)
+        r.setHuesped(gestionado);
+
+        reservaRepo.save(r); // INSERT en SQL Server
+        historialActividad.addFirst("NUEVA reserva -> " + gestionado.getDni());
     }
 
-    // READ con LAMBDA: buscar por DNI del huesped
+    // READ: buscar por DNI del huesped
     public Optional<Reserva> buscar(String dni) {
-        return listaReservas.stream()
-                .filter(r -> r.getHuesped().getDni().equals(dni)) // LAMBDA
-                .findFirst();
+        List<Reserva> encontradas = reservaRepo.findByHuesped_Dni(dni);
+        return encontradas.isEmpty() ? Optional.empty() : Optional.of(encontradas.get(0));
     }
 
-    // READ con LAMBDA: "MIS reservas" -> filtra por el DNI del recepcionista.
-    // Esta es la clave del login: cada quien ve solo las suyas.
+    // READ: "MIS reservas" -> filtra por el recepcionista logueado
     public List<Reserva> listarPorRecepcionista(String dniRecep) {
-        return listaReservas.stream()
-                .filter(r -> r.getRecepcionista().getDni().equals(dniRecep)) // LAMBDA
-                .toList();
+        return reservaRepo.findByRecepcionista_Dni(dniRecep);
     }
 
-    // UPDATE
-    public boolean modificar(String dni, Reserva nueva) {
-        for (int i = 0; i < listaReservas.size(); i++) {
-            if (listaReservas.get(i).getHuesped().getDni().equals(dni)) {
-                listaReservas.set(i, nueva);
-                historialActividad.addFirst("MODIFICADA reserva -> " + dni);
-                serializar();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // DELETE con LAMBDA
+    // DELETE: borra todas las reservas de ese huesped
     public boolean eliminar(String dni) {
-        boolean ok = listaReservas.removeIf(r -> r.getHuesped().getDni().equals(dni)); // LAMBDA
-        if (ok) {
-            historialActividad.addFirst("ELIMINADA reserva -> " + dni);
-            serializar();
-        }
-        return ok;
+        List<Reserva> reservas = reservaRepo.findByHuesped_Dni(dni);
+        if (reservas.isEmpty()) return false;
+        reservaRepo.deleteAll(reservas);
+        historialActividad.addFirst("ELIMINADA reserva -> " + dni);
+        return true;
     }
 
-    public List<Reserva> listarTodas() { return listaReservas; }
+    // READ ALL: lo metemos en un ArrayList nuevo (ESTRUCTURA 1)
+    public List<Reserva> listarTodas() {
+        return new ArrayList<>(reservaRepo.findAll());
+    }
 
-    // EXTRA con LAMBDA: recaudacion total
+    // EXTRA con LAMBDA/STREAM: recaudacion total
     public double calcularRecaudacionTotal() {
-        return listaReservas.stream()
+        return reservaRepo.findAll().stream()
                 .mapToDouble(r -> r.getTotalPagado()) // LAMBDA
                 .sum();
     }
 
     public List<String> obtenerHistorial() { return historialActividad; }
-
-    private void serializar() {
-        try (ObjectOutputStream o = new ObjectOutputStream(new FileOutputStream(ARCHIVO))) {
-            o.writeObject(new ArrayList<>(listaReservas));
-        } catch (IOException e) { System.out.println("Error guardar: " + e.getMessage()); }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void cargarDatos() {
-        File f = new File(ARCHIVO);
-        if (f.exists()) {
-            try (ObjectInputStream i = new ObjectInputStream(new FileInputStream(f))) {
-                listaReservas = (ArrayList<Reserva>) i.readObject();
-            } catch (Exception e) { System.out.println("Error cargar: " + e.getMessage()); }
-        }
-    }
 }

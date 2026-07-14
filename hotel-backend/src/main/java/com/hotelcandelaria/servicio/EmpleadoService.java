@@ -1,96 +1,53 @@
 package com.hotelcandelaria.servicio;
 
-import com.hotelcandelaria.modelo.Cargo;
 import com.hotelcandelaria.modelo.Empleado;
-import jakarta.annotation.PostConstruct;
+import com.hotelcandelaria.repositorio.EmpleadoRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.util.ArrayList;   // ESTRUCTURA: ArrayList para los recepcionistas
+import java.util.ArrayList; // ESTRUCTURA: ArrayList
 import java.util.List;
 import java.util.Optional;
 
-// Servicio de recepcionistas: login + CRUD (alta, baja, modificacion).
+// Login + CRUD de recepcionistas, sobre SQL Server.
 @Service
 public class EmpleadoService {
 
-    private List<Empleado> empleados = new ArrayList<>();
-    private static final String ARCHIVO = "empleados.dat";
+    private final EmpleadoRepository repo;
+    public EmpleadoService(EmpleadoRepository repo) { this.repo = repo; }
 
-    @PostConstruct
-    public void iniciar() {
-        cargarDatos();
-        if (empleados.isEmpty()) {
-            precargar();
-            serializar();
-        }
-    }
-
-    // Usuarios de ejemplo (datos de la foto de referencia).
-    // Contrasena por defecto de todos: 1234
-    private void precargar() {
-        Cargo recep = new Cargo(1, "Recepcionista");
-        Cargo jefe = new Cargo(2, "Jefe de Turno");
-        empleados.add(new Empleado("78451236", "Kenny", "Huacani", recep, "SHOW", "1234", "RECEPCIONISTA"));
-        empleados.add(new Empleado("65432187", "Manuela", "Segunda", recep, "OÑO", "1234", "RECEPCIONISTA"));
-        empleados.add(new Empleado("74123698", "Makanaky", "La Realeza", jefe, "GAAA", "1234", "JEFE"));
-    }
-
-    // LOGIN con LAMBDA: busca un empleado cuyo usuario Y password coincidan.
+    // LOGIN: Spring genera el SELECT ... WHERE usuario=? AND password=?
     public Optional<Empleado> login(String usuario, String password) {
-        return empleados.stream()
-                .filter(e -> e.getUsuario().equals(usuario) && e.getPassword().equals(password)) // LAMBDA
-                .findFirst();
+        return repo.findByUsuarioAndPassword(usuario, password);
     }
 
-    public List<Empleado> listar() { return empleados; }
+    public List<Empleado> listar() { return new ArrayList<>(repo.findAll()); }
 
-    // Buscar por DNI (para asociar la reserva a su recepcionista)
-    public Optional<Empleado> buscarPorDni(String dni) {
-        return empleados.stream()
-                .filter(e -> e.getDni().equals(dni)) // LAMBDA
-                .findFirst();
-    }
+    public Optional<Empleado> buscarPorDni(String dni) { return repo.findByDni(dni); }
 
     public boolean agregar(Empleado e) {
-        boolean usuarioRepetido = empleados.stream()
-                .anyMatch(x -> x.getUsuario().equals(e.getUsuario())); // LAMBDA
-        if (usuarioRepetido) return false;
-        empleados.add(e);
-        serializar();
+        if (repo.existsByUsuario(e.getUsuario())) return false;
+        repo.save(e);
         return true;
     }
 
     public boolean modificar(String dni, Empleado datos) {
-        for (int i = 0; i < empleados.size(); i++) {
-            if (empleados.get(i).getDni().equals(dni)) {
-                empleados.set(i, datos);
-                serializar();
-                return true;
-            }
-        }
-        return false;
+        Optional<Empleado> existente = repo.findByDni(dni);
+        if (existente.isEmpty()) return false;
+        Empleado e = existente.get();      // mantenemos el id de la BD
+        e.setNombres(datos.getNombres());
+        e.setApellidos(datos.getApellidos());
+        e.setUsuario(datos.getUsuario());
+        e.setPassword(datos.getPassword());
+        e.setRol(datos.getRol());
+        e.setCargo(datos.getCargo());
+        repo.save(e);
+        return true;
     }
 
     public boolean eliminar(String dni) {
-        boolean ok = empleados.removeIf(e -> e.getDni().equals(dni)); // LAMBDA
-        if (ok) serializar();
-        return ok;
-    }
-
-    private void serializar() {
-        try (ObjectOutputStream o = new ObjectOutputStream(new FileOutputStream(ARCHIVO))) {
-            o.writeObject(new ArrayList<>(empleados));
-        } catch (IOException e) { System.out.println("Error guardar emp: " + e.getMessage()); }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void cargarDatos() {
-        File f = new File(ARCHIVO);
-        if (f.exists()) {
-            try (ObjectInputStream i = new ObjectInputStream(new FileInputStream(f))) {
-                empleados = (ArrayList<Empleado>) i.readObject();
-            } catch (Exception e) { System.out.println("Error cargar emp: " + e.getMessage()); }
-        }
+        Optional<Empleado> e = repo.findByDni(dni);
+        if (e.isEmpty()) return false;
+        repo.delete(e.get());
+        return true;
     }
 }

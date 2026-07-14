@@ -1,22 +1,35 @@
 package com.hotelcandelaria.modelo;
 
-import java.io.Serializable;
+import jakarta.persistence.*;
 
-// La transaccion principal: une recepcionista + huesped + habitacion.
-public class Reserva implements Serializable {
-    private static final long serialVersionUID = 2L;
+// @Entity -> tabla "reservas". Se relaciona con las otras tablas mediante
+// @ManyToOne (muchas reservas pueden apuntar a un mismo recepcionista,
+// huesped o habitacion). Eso crea las LLAVES FORANEAS en SQL Server.
+@Entity
+@Table(name = "reservas")
+public class Reserva {
 
-    private Empleado recepcionista; // quien atendio (define "mis reservas")
-    private Huesped huesped;         // el cliente
-    private Habitacion habitacion;   // el cuarto alquilado
-    private int noches;              // cuantas noches
-    private int personas;            // cuantas personas
-    private double subtotal;         // precio x noches
-    private double igv;              // 18% del subtotal
-    private double totalPagado;      // subtotal + igv
-    private String metodoPago;       // Efectivo, Tarjeta, Yape
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    public Reserva() {} // Constructor vacio para Jackson
+    @ManyToOne // FK -> empleados
+    private Empleado recepcionista;
+
+    @ManyToOne // FK -> huespedes
+    private Huesped huesped;
+
+    @ManyToOne // FK -> habitaciones
+    private Habitacion habitacion;
+
+    private int noches;
+    private int personas;
+    private double subtotal;
+    private double igv;
+    private double totalPagado;
+    private String metodoPago;
+
+    public Reserva() {}
 
     public Reserva(Empleado recepcionista, Huesped huesped, Habitacion habitacion,
                    int noches, int personas, String metodoPago) {
@@ -26,25 +39,22 @@ public class Reserva implements Serializable {
         this.noches = noches;
         this.personas = personas;
         this.metodoPago = metodoPago;
-        // Calculo con IGV (igual que en la foto de referencia)
         this.subtotal = habitacion.getPrecio() * noches;
         this.igv = this.subtotal * 0.18;
         this.totalPagado = this.subtotal + this.igv;
     }
 
+    public Long getId() { return id; }
     public Empleado getRecepcionista() { return recepcionista; }
+    public void setRecepcionista(Empleado e) { this.recepcionista = e; }
     public Huesped getHuesped() { return huesped; }
+    public void setHuesped(Huesped h) { this.huesped = h; }
     public Habitacion getHabitacion() { return habitacion; }
+    public void setHabitacion(Habitacion h) { this.habitacion = h; }
     public int getNoches() { return noches; }
     public int getPersonas() { return personas; }
     public double getSubtotal() { return subtotal; }
     public double getIgv() { return igv; }
     public double getTotalPagado() { return totalPagado; }
     public String getMetodoPago() { return metodoPago; }
-
-    @Override
-    public String toString() {
-        return "Reserva [" + huesped.obtenerInfo() + " | Hab " + habitacion.getNumero() +
-               " | Total S/" + totalPagado + " | Atendio: " + recepcionista.obtenerInfo() + "]";
-    }
 }

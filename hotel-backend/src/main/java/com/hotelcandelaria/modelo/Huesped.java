@@ -1,20 +1,25 @@
 package com.hotelcandelaria.modelo;
 
-// Huesped HEREDA de Persona (igual que antes). El "extends" es la herencia.
-public class Huesped extends Persona {
-    private String telefono; // Dato exclusivo del cliente
+import jakarta.persistence.*;
 
-    public Huesped() {} // Constructor vacio para Jackson
+// @Entity -> crea la tabla "huespedes". Hereda id/dni/nombres/apellidos
+// de Persona (gracias a @MappedSuperclass) y agrega telefono.
+@Entity
+@Table(name = "huespedes")
+public class Huesped extends Persona {
+
+    private String telefono;
+
+    public Huesped() {}
 
     public Huesped(String dni, String nombres, String apellidos, String telefono) {
-        super(dni, nombres, apellidos); // Mandamos lo basico al padre Persona
-        this.telefono = telefono;       // Guardamos el telefono aca
+        super(dni, nombres, apellidos);
+        this.telefono = telefono;
     }
 
-    public String getTelefono() { return telefono; } // Getter para el JSON
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
 
-    @Override // POLIMORFISMO: sobreescribimos el metodo del padre
-    public String obtenerInfo() {
-        return nombres + " " + apellidos; // El cliente solo muestra su nombre
-    }
+    @Override
+    public String obtenerInfo() { return nombres + " " + apellidos; }
 }
