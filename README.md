@@ -4,7 +4,7 @@ Sistema de reservas con login por roles, catalogo de habitaciones con CRUD
 completo, gestion de recepcionistas y cada recepcionista viendo solo sus
 reservas.
 
----
+--- hola
 
 ## IMPORTANTE antes de correr (leer esto)
 
