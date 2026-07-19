@@ -10,7 +10,8 @@ import java.util.List;
 
 // CRUD del catalogo de habitaciones.
 @RestController
-@RequestMapping("/api/habitaciones")
+@RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class HabitacionController {
 
     private final HabitacionService servicio;

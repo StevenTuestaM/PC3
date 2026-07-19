@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/reservas")
+@RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class ReservaController {
 
     // Inyeccion de los tres servicios que necesita (Spring los pasa solo)
