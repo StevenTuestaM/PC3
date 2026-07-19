@@ -1,5 +1,5 @@
 package com.hotelcandelaria.controlador;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
 import com.hotelcandelaria.dto.*;
 import com.hotelcandelaria.modelo.Empleado;
 import com.hotelcandelaria.servicio.EmpleadoService;

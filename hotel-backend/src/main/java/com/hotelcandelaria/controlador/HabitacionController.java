@@ -1,5 +1,5 @@
 package com.hotelcandelaria.controlador;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
 import com.hotelcandelaria.dto.HabitacionRequest;
 import com.hotelcandelaria.dto.RespuestaApi;
 import com.hotelcandelaria.modelo.Habitacion;
