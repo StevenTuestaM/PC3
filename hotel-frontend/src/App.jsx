@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
-const API = "https://pc3-1-rqjh.onrender.com/api/reservas";
+const API = "https://pc3-1-rqjh.onrender.com/api";
 
 // Helper: hace fetch y devuelve JSON (con manejo simple de error)
 async function pedir(ruta, opciones = {}) {
