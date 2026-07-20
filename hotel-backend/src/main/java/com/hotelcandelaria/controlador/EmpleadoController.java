@@ -22,7 +22,7 @@ public class EmpleadoController {
     }
 
     // ===== LOGIN: POST /api/login =====
-    @PostMapping("/login")
+    @PostMapping(value = {"/login", "/reservas/login", "/empleados/login"})
     public LoginResponse login(@RequestBody LoginRequest req) {
         Optional<Empleado> emp = servicio.login(req.getUsuario(), req.getPassword());
         if (emp.isEmpty())
